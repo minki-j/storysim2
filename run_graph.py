@@ -3,60 +3,31 @@ import json
 
 from graph import main_graph
 
-from state import Scene, MultipleChoiceQuestion, OpenEndedQuestion, Option
+from state import Scene, OpenEndedQuestion
+
+
+def apply_choices(scene: Scene):
+    sentence = scene.sentence
+    sentence = sentence.replace(f"<blank>", scene.blank.answer)
+    return sentence
 
 
 def ask_reader(scenes: Scene):
     scene = scenes[-1]
-    option_setence = ""
-    option_setence += "-" * 30 + "\n"
-    for i, question in enumerate(scene.questions):
-        option_setence += f"Q {question.question}\n"
-        if isinstance(question, MultipleChoiceQuestion):
-            for j, option in enumerate(question.options):
-                option_setence += f"{j+1}. {(option.content)}\n"
-        option_setence += "-" * 30 + "\n"
-    print("#" * 30)
-    print(
-        f"Complete the sentence using the following options:\nSentence: {scene.sentence}\n{option_setence}"
-    )
-    print("#" * 30)
-    for i, question in enumerate(scene.questions):
-        if isinstance(question, MultipleChoiceQuestion):
-            user_choice = input(
-                f"Enter the number of the choice for {question.question}:"
-            )
-            try:
-                user_choice_int = int(user_choice)
-                scene.questions[i].options[user_choice_int-1].chosen = True
-            except ValueError:
-                print("Invalid input. Please enter a valid integer.")
-                continue
-        elif isinstance(question, OpenEndedQuestion):
-            user_choice = input(
-                f"Enter the answer for {question.question}:"
-            )
-            scene.questions[i].answer = user_choice
+    print("-" * 50)
+    print(f"{scene.sentence}")
+    print("\n" + "-" * 50)
+    print(f"Fill in the <blank>\n{scene.blank.question}")
+    user_choice = input("")
+    scene.blank.answer = user_choice.strip()
+
+    scene.completed_sentence = apply_choices(scene)
+
     return scene
 
 
 thread_id = str(uuid.uuid4())
-config = {"configurable": {"thread_id": 24}, "recursion_limit": 100}
-
-
-seed_scenes = [Scene(
-    sentence="It was a rainy day in the <blank1> of <blank2>.",
-    questions=[
-        MultipleChoiceQuestion(
-            question="city or town?",
-            options=[
-                Option(content="city"),
-                Option(content="town"),
-            ],
-        ),
-        OpenEndedQuestion(question="name of the city or town?", answer=""),
-    ],
-)]
+config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 100}
 
 
 main_graph.invoke(
@@ -65,10 +36,11 @@ main_graph.invoke(
     },
     config,
 )
-scene = ask_reader(seed_scenes)
+
+completed_sentence = input("What would be the first sentence of your story?:\n")
+scene = Scene(sentence=completed_sentence, blank=OpenEndedQuestion(), completed_sentence=completed_sentence)
 
 while True:
-
     main_graph.update_state(
         config,
         {

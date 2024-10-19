@@ -14,81 +14,84 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.messages import HumanMessage, RemoveMessage
 from langchain_core.runnables import RunnableParallel
 
-from state import OverallState, OutputState, Scene, MultipleChoiceQuestion, OpenEndedQuestion
+from state import (
+    OverallState,
+    OutputState,
+    Scene,
+)
 
-from llm_models import chat_model_small
+from llm_models import chat_model_small, chat_model
 
 
-def apply_choices(scene: Scene):
-    sentence = scene.sentence
-    for i, question in enumerate(scene.questions):
-        chosen_option = ""
-        if isinstance(question, MultipleChoiceQuestion):
-            for j, option in enumerate(question.options):
-                if option.chosen:
-                    chosen_option = option.content
-                    break
-        elif isinstance(question, OpenEndedQuestion):
-            chosen_option = question.answer
-        sentence = sentence.replace(f"<blank{i+1}>", chosen_option)
-    return sentence
+class GenerateSentenceOutput(BaseModel):
+    rationale: str
+    next_sentence: Scene
 
 
 def generate_sentence(state: OverallState):
-    print("\n>>> NODE: generate_sentence")
-
-    chain = (
-        ChatPromptTemplate.from_template(
-            """
-Write the next sentence of the story:
-{story}
-            """
-        )
-    ) | chat_model_small | StrOutputParser()
-
-    return {
-        "story_draft": chain.invoke(apply_choices(state.story[-1])),
-    }
-
-def make_choices(state: OverallState):
-    print("\n>>> NODE: make_choices")
+    # print("\n>>> NODE: generate_sentence")
 
     chain = (
         (
             ChatPromptTemplate.from_template(
                 """
-Given the following story draft, create a Scene object with a sentence containing two blanks and two corresponding questions. The first question should be a MultipleChoiceQuestion, and the second should be an OpenEndedQuestion.
+You are a novelist writing a story that has the reader as the main character. You can't directly ask the reader about their thoughts, feelings, or preferences. However, you can write a story that has choices so that the reader can reveal themselves through their choices.
 
-Example:
-Input: It was a rainy day in the city of London.
-Output: Scene(
-    sentence="The rain poured down as I walked through the <blank1> streets of <blank2>.",
-    questions=[
-        MultipleChoiceQuestion(
-            question="What type of streets?",
-            options=[
-                Option(content="busy"),
-                Option(content="quiet"),
-                Option(content="narrow"),
-            ],
-        ),
-        OpenEndedQuestion(question="What city is the story set in?", answer=""),
-    ],
-)
+I'll give you a previous sentence of the story. You need to write the next sentence ending with a blank for the reader to fill in.
 
-Now, create a similar Scene object for the following story draft:
-{story_draft}
-            """
+----
+
+Example1.
+
+Previous sentence: It was a rainy day.
+Next sentence: (
+    rationale="Ok... I need to know how the reader feels in a rainy day.",
+    next_sentence=Scene(
+        sentence="The sky was grey and the rain poured down like a waterfall. I felt <blank>",
+        blank=OpenEndedQuestion(question="How would you feel in a rainy day?", answer="")
+    ))
+
+
+Example2.
+
+Previous sentence: I just woke up from a long nap. I dreamed about my project. 
+Next sentence: (
+    rationale="I need to know what project the reader is working on.",
+    next_sentence=Scene(
+        sentence="The project that I've been working on for <blank>",
+        blank=OpenEndedQuestion(question="How long have you been working on the project?", answer="")
+    ))
+
+
+Example3.
+
+Previous sentence: I decided that I would stop worrying because nothing changed. I took a deep breath and thought about everything that had been weighing on my mind. I realized that I needed to retreat, and that meant I had to leave my partner. I knew that leaving my partner was the right thing to do, even though it was a difficult decision. 
+Next sentence: (
+    rationale="The reader has some problems with their partner. I need to know the detail about it.",
+    next_sentence=Scene(
+        sentence="My partner and I have some problems. I always ask him to do <blank>",
+        blank=OpenEndedQuestion(question="What is the problem?", answer="")
+    ))
+
+----
+
+Now, it's your turn!
+
+Previous sentence: {story}
+Next sentence:"""
             )
         )
-        | chat_model_small.with_structured_output(Scene)
+        | chat_model.with_structured_output(GenerateSentenceOutput)
     )
 
-    scene = chain.invoke({"story_draft": state.story_draft})
+    story = " ".join([scene.completed_sentence for scene in state.story])
+
+    response = chain.invoke({"story": story})
 
     return {
-        "story": [scene],
+        "story": [response.next_sentence],
     }
+
 
 g = StateGraph(input=OverallState, output=OutputState)
 g.add_edge(START, "ask_reader")
@@ -97,10 +100,7 @@ g.add_node("ask_reader", RunnablePassthrough())
 g.add_edge("ask_reader", n(generate_sentence))
 
 g.add_node(generate_sentence)
-g.add_edge(n(generate_sentence), n(make_choices))
-
-g.add_node(make_choices)
-g.add_edge(n(make_choices), "ask_reader")
+g.add_edge(n(generate_sentence), "ask_reader")
 
 os.makedirs("./data/graph_checkpoints", exist_ok=True)
 db_path = os.path.join(".", "data", "graph_checkpoints", "checkpoints.sqlite")

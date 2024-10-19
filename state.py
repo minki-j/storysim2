@@ -6,14 +6,14 @@ from langgraph.graph.message import AnyMessage, add_messages
 # ===========================================
 #                VARIABLE SCHEMA
 # ===========================================
-class Option(BaseModel):
-    chosen: bool = False
-    content: str = Field(default="")
+# class Option(BaseModel):
+#     chosen: bool = False
+#     content: str = Field(default="")
 
 
-class MultipleChoiceQuestion(BaseModel):
-    question: str = Field(default="")
-    options: List[Option]
+# class MultipleChoiceQuestion(BaseModel):
+#     question: str = Field(default="")
+#     options: List[Option]
 
 
 class OpenEndedQuestion(BaseModel):
@@ -24,7 +24,8 @@ class OpenEndedQuestion(BaseModel):
 class Scene(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     sentence: str
-    questions: List[MultipleChoiceQuestion | OpenEndedQuestion]
+    blank: OpenEndedQuestion
+    completed_sentence: str = Field(default="")
 
 
 # ===========================================
@@ -40,7 +41,8 @@ def update_story(original: List[Scene], new: List[Scene]):
         for original_scene in original:
             if scene.id == original_scene.id:
                 original_scene.sentence = scene.sentence
-                original_scene.questions = scene.questions
+                original_scene.blank = scene.blank
+                original_scene.completed_sentence = scene.completed_sentence
                 found = True
                 break
         if not found:
