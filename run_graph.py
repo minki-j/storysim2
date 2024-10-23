@@ -1,9 +1,9 @@
 import uuid
 import json
 
-from graph import main_graph
+from app.sim.main_graph import main_graph
 
-from state import Scene, OpenEndedQuestion
+from app.sim.state import Scene, OpenEndedQuestion
 
 
 def apply_choices(scene: Scene):
