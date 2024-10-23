@@ -11,7 +11,7 @@ from db import db, Users, Stories
 
 
 async def initialize_story(session, request: Request):
-    print("\n>>> CNTRL initialize_story")
+    print(">>> CONTROLLER: initialize_story")
 
     story_id = str(uuid.uuid4())
 

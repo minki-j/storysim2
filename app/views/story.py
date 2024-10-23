@@ -6,8 +6,9 @@ from app.views.components.header import header_component
 
 
 def story_view(session, req, res, id: str):
+    print(">>> VIEW: story_view")
+    
     story = db.t.stories.get(id)
-    print("story.content: ", story.content)
 
     return (
         Title("Story Sim"),
@@ -23,6 +24,7 @@ def story_view(session, req, res, id: str):
                 hx_swap="none",
                 hx_push_url="false",
                 style="display: flex; flex-direction: column; gap: 10px; height: 100%;",
+                hx_indicator=".btn-loader",
             )(
                 Div(style="flex-grow: 1;")(
                     Textarea(
@@ -32,7 +34,7 @@ def story_view(session, req, res, id: str):
                         style="height: 100%;",
                     )(story.content),
                 ),
-                Button(type="submit", cls="btn-loader btn-submit")(
+                Button(type="submit", cls="btn-loader btn-submit btn-loader")(
                     "Cmd(⌘) + Enter"
                 ),
                 Script(

@@ -4,7 +4,7 @@ from db import db
 
 
 async def update_profile(req, session):
-    print("\n>>> CNTRL: update_profile")
+    print(">>> CONTROLLER: update_profile")
     form_data = await req.form()
     user_id = session["user_id"]
     user_data = db.t.users.get(user_id)

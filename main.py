@@ -66,7 +66,7 @@ from app.views import profile as profile_views
 from app.views import history as history_views
 from app.controllers import profile as profile_controller
 from app.views import story as story_views
-from app.controllers import generate as generate_controller
+from app.controllers import story as story_controller           
 
 # Managements
 app.get("/")(home_views.home_view)
@@ -82,8 +82,8 @@ app.post("/update_profile")(profile_controller.update_profile)
 app.get("/story")(story_views.story_view)
 
 app.post("/init")(init_controller.initialize_story)
-app.post("/generate")(generate_controller.generate_story)
-
+app.post("/generate")(story_controller.generate_story)
+app.delete("/delete")(story_controller.delete_story)
 
 running_on_server = os.environ.get("RAILWAY_ENVIRONMENT_NAME") == "production"
 serve(

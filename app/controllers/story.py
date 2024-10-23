@@ -6,7 +6,7 @@ from app.sim.main_graph import main_graph
 
 
 async def generate_story(session, req, res, id: str):
-    print("generate story")
+    print(">>> CONTROLLER: generate_story")
 
     form_data = await req.form()
 
@@ -26,3 +26,12 @@ async def generate_story(session, req, res, id: str):
     )
 
     return updated_story
+
+
+
+async def delete_story(session, req, res, id: str):
+    print(">>> CONTROLLER: delete_story")
+
+    db.t.stories.delete(id)
+
+    return None

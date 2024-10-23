@@ -18,7 +18,7 @@ def header_component():
                     Summary("Menu"),
                     Ul(
                         Li(A(href="/profile")("Profile")),
-                        Li(A(href="/history")("History")),
+                        Li(A(href=f"/history")("History")),
                         Li(A(href="/logout")("Logout")),
                     ),
                 )

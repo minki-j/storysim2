@@ -13,7 +13,7 @@ auth_callback_path = "/auth_redirect"
 
 
 def auth_redirect(code: str, request, session):
-    print("\n>>> CNTRL: auth_redirect")
+    print(">>> CONTROLLER: auth_redirect")
     protocol = request.headers.get('X-Forwarded-Proto', 'http')
     base_url = f"{protocol}://{request.headers['host']}"
     redir = urljoin(base_url, auth_callback_path)
@@ -37,7 +37,7 @@ def auth_redirect(code: str, request, session):
 
 
 def logout(session, request, response):
-    print("\n>>> CNTRL: logout")
+    print(">>> CONTROLLER: logout")
     session.clear()
     print(f"===> session cleared: {session}")
     return RedirectResponse("/", status_code=303)
