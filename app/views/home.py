@@ -9,6 +9,7 @@ def home_view(session, req, res):
         header_component(),
         Main(cls="container", style="")(
             Form(
+                id="story-form",
                 hx_post="/init",
                 hx_target="body",
                 hx_swap="outerHTML",
@@ -22,6 +23,19 @@ def home_view(session, req, res):
                 )(),
                 Button(type="submit", cls="btn-loader btn-submit btn-loader")(
                     "Cmd(⌘) + Enter"
+                ),
+                Script(
+                    """
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('story').addEventListener('keydown', function(event) {
+        console.log(event.key);
+        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+            event.preventDefault();
+            htmx.trigger('#story-form', 'submit');
+        }
+    });
+});
+"""
                 ),
             )
         ),

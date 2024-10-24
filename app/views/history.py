@@ -1,4 +1,5 @@
 import time
+from itertools import chain
 
 from fasthtml.common import *
 
@@ -7,7 +8,6 @@ from db import db
 
 
 def history_view(session, req, res):
-    user_id = session.get("user_id")
     stories = db.t.stories.rows_where(
         "user_id = ? ORDER BY created_at DESC", [session["user_id"]]
     )
@@ -20,8 +20,10 @@ def history_view(session, req, res):
             Main(cls="container")(
                 H1("No stories yet"),
                 P("Generate your first story to see it here!"),
-            ),
+            ), 
         )
+
+    stories = chain([first_story], stories)
 
     return (
         Title("Story Sim"),
@@ -65,7 +67,7 @@ def history_view(session, req, res):
                                     onmouseout="this.style.backgroundColor=''; this.style.borderColor='';",
                                 ),
                                 time.strftime(
-                                    "%B %d, %Y at %H:%M",
+                                    "%B %d %H:%M",
                                     time.strptime(
                                         story["created_at"], "%Y-%m-%dT%H:%M:%S.%f"
                                     ),

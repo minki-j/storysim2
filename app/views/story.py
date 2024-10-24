@@ -7,7 +7,7 @@ from app.views.components.header import header_component
 
 def story_view(session, req, res, id: str):
     print(">>> VIEW: story_view")
-    
+
     story = db.t.stories.get(id)
 
     return (
@@ -39,17 +39,30 @@ def story_view(session, req, res, id: str):
                 ),
                 Script(
                     """
+// This is for htmx swap
+document.getElementById('story').addEventListener('keydown', function(event) {
+    console.log(event.key);
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        htmx.trigger('#story-form', 'submit');
+    }
+});
+
+// This is for the initial page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('story').addEventListener('keydown', function(event) {
+        console.log(event.key);
+        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+            event.preventDefault();
+            htmx.trigger('#story-form', 'submit');
+        }
+    });
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('htmx:afterRequest', function(event) {
         if (event.detail.pathInfo.requestPath.startsWith('/generate')) {
             document.getElementById('story').value = event.detail.xhr.responseText;
-        }
-    });
-
-    document.getElementById('story').addEventListener('keydown', function(event) {
-        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-            event.preventDefault();
-            htmx.trigger('#story-form', 'submit');
         }
     });
 });
